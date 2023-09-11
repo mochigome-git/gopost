@@ -33,7 +33,7 @@ func ProcessMQTTData(db *gorm.DB) {
 		}
 
 		var existingRecord model.Post
-		if err := FindRecordByID(1, &existingRecord, db); err != nil {
+		if err := FindRecordByID(2, &existingRecord, db); err != nil {
 			fmt.Printf("Error finding record by ID: %v\n", err)
 			continue
 		}
