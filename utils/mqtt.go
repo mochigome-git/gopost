@@ -19,9 +19,7 @@ type MqttData struct {
 var ExportedReceivedMessages []MqttData
 var ExportedReceivedMessagesJSON string
 
-func Client() {
-	broker := os.Getenv("MQTT_HOST")
-	port := os.Getenv("MQTT_PORT")
+func Client(broker string, port string, topic string) {
 
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
@@ -38,7 +36,6 @@ func Client() {
 	}
 
 	// Subscribe to a topic
-	topic := os.Getenv("MQTT_TOPIC")
 	if token := client.Subscribe(topic, 0, messageReceived); token.Wait() && token.Error() != nil {
 		log.Fatalf("Error subscribing to topic: %v", token.Error())
 	}
