@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"post/model"
+	"strconv"
 	"sync"
 	"time"
 
@@ -38,11 +39,50 @@ func ProcessMQTTData(db *gorm.DB) {
 			continue
 		}
 
-		for _, message := range messages {
-			fieldName := message.Address
-			fieldValue := message.Value
+		// Collect data for 35 seconds
+		startTime := time.Now()
+		collectedData := make(map[string][]interface{}) // Map to store data for each fieldName
 
-			if err := UpdateField(&existingRecord, fieldName, fieldValue); err != nil {
+		for {
+			if time.Since(startTime).Seconds() >= 35 {
+				break
+			}
+
+			for _, message := range messages {
+				fieldName := message.Address
+
+				// Check if the Value is a float64
+				fieldValue, ok := message.Value.(float64)
+				if !ok {
+					// Attempt to convert to float64
+					if floatValue, err := strconv.ParseFloat(fmt.Sprintf("%v", message.Value), 64); err == nil {
+						fieldValue = floatValue
+					} else {
+						fmt.Printf("Error: message.Value is not a float64: %v\n", message.Value)
+						continue
+					}
+				}
+
+				// Append the fieldValue to the map for the corresponding fieldName
+				collectedData[fieldName] = append(collectedData[fieldName], fieldValue)
+			}
+			time.Sleep(time.Second)
+		}
+
+		// Calculate the mean for each fieldName and call UpdateField
+		for fieldName, values := range collectedData {
+			if len(values) == 0 {
+				continue
+			}
+
+			var sum float64
+			for _, value := range values {
+				sum += value.(float64)
+			}
+			mean := sum / float64(len(values))
+
+			// Call UpdateField with the calculated mean
+			if err := UpdateField(&existingRecord, fieldName, mean); err != nil {
 				fmt.Printf("Error updating field %s: %v\n", fieldName, err)
 				continue
 			}
