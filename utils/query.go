@@ -34,7 +34,7 @@ func UpdateField(post interface{}, address string, value interface{}) error {
 	field := v.FieldByName(address)
 
 	if !field.IsValid() {
-		return fmt.Errorf("Field not found: %s", address)
+		return fmt.Errorf("field not found: %s", address)
 	}
 
 	// Determine the field type and set the value accordingly
@@ -48,7 +48,7 @@ func UpdateField(post interface{}, address string, value interface{}) error {
 		field.SetBool(boolValue)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		// Convert the value to an integer
-		intValue, err := strconv.Atoi(fmt.Sprintf("%v", value))
+		intValue, err := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
 		if err != nil {
 			return err
 		}
@@ -61,7 +61,7 @@ func UpdateField(post interface{}, address string, value interface{}) error {
 		}
 		field.SetFloat(floatValue)
 	default:
-		return fmt.Errorf("Unsupported field type: %s", field.Kind())
+		return fmt.Errorf("unsupported field type: %s", field.Kind())
 	}
 
 	return nil
