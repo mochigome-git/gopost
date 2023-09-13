@@ -67,6 +67,7 @@ func ProcessMQTTData(db *gorm.DB) {
 				collectedData[fieldName] = append(collectedData[fieldName], fieldValue)
 			}
 			time.Sleep(time.Second)
+			continue
 		}
 
 		// Calculate the mean for each fieldName and call UpdateField
