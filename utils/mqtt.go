@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/google/uuid"
 )
 
 type MqttData struct {
@@ -23,7 +24,8 @@ func Client(broker string, port string, topic string) {
 
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
-	opts.SetClientID("go_mqtt_subscriber")
+	clientID := "go_mqtt_subscriber_" + uuid.New().String()
+	opts.SetClientID(clientID)
 	opts.SetUsername("emqx")
 	opts.SetPassword("public")
 	opts.OnConnect = connectHandler
