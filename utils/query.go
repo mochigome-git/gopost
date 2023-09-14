@@ -10,8 +10,12 @@ import (
 )
 
 func UpdateMQTTDataToDB(data interface{}, db *gorm.DB) error {
+	// Enable query logging for this operation
+	db = db.Debug()
+
 	// Update the record in the MQTTData table
 	result := db.Save(data)
+
 	if result.Error != nil {
 		return result.Error
 	}

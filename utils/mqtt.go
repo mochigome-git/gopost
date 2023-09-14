@@ -20,7 +20,7 @@ type MqttData struct {
 var ExportedReceivedMessages []MqttData
 var ExportedReceivedMessagesJSON string
 
-func Client(broker string, port string, topic string) {
+func Client(broker string, port string, topic string, clientDone chan<- struct{}) {
 
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
@@ -52,6 +52,9 @@ func Client(broker string, port string, topic string) {
 	// Unsubscribe and disconnect from the MQTT broker
 	client.Unsubscribe(topic)
 	client.Disconnect(250)
+
+	// Signal that the client is done
+	close(clientDone)
 }
 
 func messageReceived(client mqtt.Client, msg mqtt.Message) {
