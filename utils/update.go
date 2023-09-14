@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"post/model"
 	"strconv"
 	"sync"
@@ -15,6 +16,16 @@ var mu sync.RWMutex
 var stopProcessing = make(chan struct{})
 var lastProcessedTime time.Time
 
+const (
+	dataCollectionDuration = 35 * time.Second
+)
+
+func handleError(err error, message string) {
+	if err != nil {
+		log.Printf("Error: %s: %v\n", message, err)
+	}
+}
+
 func ProcessMQTTData(db *gorm.DB) {
 	for {
 		mu.RLock()
@@ -22,7 +33,7 @@ func ProcessMQTTData(db *gorm.DB) {
 		mu.RUnlock()
 
 		if jsonString == "" {
-			fmt.Println("JSON string is empty")
+			log.Println("JSON string is empty")
 			time.Sleep(time.Second)
 			continue
 		}
@@ -30,46 +41,43 @@ func ProcessMQTTData(db *gorm.DB) {
 		var messages []model.Message
 
 		if err := json.Unmarshal([]byte(jsonString), &messages); err != nil {
-			fmt.Printf("Error unmarshaling JSON: %v\n", err)
+			handleError(err, "unmarshaling JSON")
 			time.Sleep(time.Second)
 			continue
 		}
 
 		var existingRecord model.Post
 		if err := FindRecordByID(1, &existingRecord, db); err != nil {
-			fmt.Printf("Error finding record by ID: %v\n", err)
+			handleError(err, "finding record by ID")
 			time.Sleep(time.Second)
 			continue
 		}
 
-		// Collect data for 35 seconds
-		startTime := time.Now()
-		collectedData := make(map[string][]float64) // Map to store data for each fieldName as float64
+		collectedDataMap := make(map[string][]float64)
 
-		for time.Since(startTime).Seconds() < 35 {
+		startTime := time.Now()
+
+		for time.Since(startTime) < dataCollectionDuration {
 			for _, message := range messages {
 				fieldName := message.Address
 
-				// Check if the Value is a float64
-				fieldValue, ok := message.Value.(float64)
+				floatValue, ok := message.Value.(float64)
 				if !ok {
-					// Attempt to convert to float64
-					if floatValue, err := strconv.ParseFloat(fmt.Sprintf("%v", message.Value), 64); err == nil {
-						fieldValue = floatValue
-					} else {
-						fmt.Printf("Error: message.Value is not a float64: %v\n", message.Value)
+					floatValue, err := strconv.ParseFloat(fmt.Sprintf("%v", message.Value), 64)
+					if err != nil {
+						log.Printf("Error: message.Value is not a float64: %v\n", message.Value)
 						continue
 					}
+					// Update the value if parsing was successful
+					message.Value = floatValue
 				}
 
-				// Append the fieldValue to the map for the corresponding fieldName
-				collectedData[fieldName] = append(collectedData[fieldName], fieldValue)
+				collectedDataMap[fieldName] = append(collectedDataMap[fieldName], floatValue)
 			}
 			time.Sleep(time.Second)
 		}
 
-		// Calculate the mean for each fieldName
-		for fieldName, values := range collectedData {
+		for fieldName, values := range collectedDataMap {
 			if len(values) == 0 {
 				continue
 			}
@@ -80,20 +88,17 @@ func ProcessMQTTData(db *gorm.DB) {
 			}
 			mean := sum / float64(len(values))
 
-			// Call UpdateField with the calculated mean
 			if err := UpdateField(&existingRecord, fieldName, mean); err != nil {
-				fmt.Printf("Error updating field %s: %v\n", fieldName, err)
+				handleError(err, fmt.Sprintf("updating field %s", fieldName))
 				continue
 			}
 		}
 
-		// Clear the collected data
-		collectedData = make(map[string][]float64)
+		collectedDataMap = make(map[string][]float64)
 
-		// Update the database after 35 seconds
-		if time.Since(startTime).Seconds() >= 35 {
+		if time.Since(startTime) >= dataCollectionDuration {
 			if err := UpdateMQTTDataToDB(&existingRecord, db); err != nil {
-				fmt.Printf("Error updating database: %v\n", err)
+				handleError(err, "updating database")
 			}
 			lastProcessedTime = time.Now()
 		}
