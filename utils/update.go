@@ -23,6 +23,7 @@ func ProcessMQTTData(db *gorm.DB) {
 		if jsonString == "" {
 			fmt.Println("JSON string is empty")
 			time.Sleep(time.Second)
+			continue
 		}
 
 		var messages []model.Message
@@ -36,12 +37,13 @@ func ProcessMQTTData(db *gorm.DB) {
 		var existingRecord model.Post
 		if err := FindRecordByID(1, &existingRecord, db); err != nil {
 			fmt.Printf("Error finding record by ID: %v\n", err)
+			time.Sleep(time.Second)
 			continue
 		}
 
 		// Collect data for 35 seconds
 		startTime := time.Now()
-		collectedData := make(map[string][]interface{}) // Map to store data for each fieldName
+		collectedData := make(map[string][]float64) // Map to store data for each fieldName as float64
 
 		for {
 			if time.Since(startTime).Seconds() >= 35 {
@@ -67,7 +69,6 @@ func ProcessMQTTData(db *gorm.DB) {
 				collectedData[fieldName] = append(collectedData[fieldName], fieldValue)
 			}
 			time.Sleep(time.Second)
-			continue
 		}
 
 		// Calculate the mean for each fieldName and call UpdateField
@@ -78,7 +79,7 @@ func ProcessMQTTData(db *gorm.DB) {
 
 			var sum float64
 			for _, value := range values {
-				sum += value.(float64)
+				sum += value
 			}
 			mean := sum / float64(len(values))
 
@@ -91,7 +92,6 @@ func ProcessMQTTData(db *gorm.DB) {
 
 		if err := UpdateMQTTDataToDB(&existingRecord, db); err != nil {
 			fmt.Printf("Error updating database: %v\n", err)
-			continue
 		}
 
 		select {
