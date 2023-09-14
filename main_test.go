@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sync"
+	"testing"
 	"time"
 
 	"post/utils"
 
-	//"github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -24,7 +26,7 @@ var mqttport string
 // topic of the MQTT broker
 var topic string
 
-func main() {
+func TestMain(*testing.T) {
 	clientDone := make(chan struct{})
 	stopProcessing := make(chan struct{})
 
@@ -57,9 +59,9 @@ func main() {
 }
 
 func init() {
-	/*if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
-	}*/
+	}
 	host := os.Getenv("DB_HOST")
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
