@@ -3,7 +3,7 @@ version: '3.8'
 services:
   subscriber:
     container_name: nk2-msp-subscriber-postver
-    image: post:0.1v
+    image: post:0.4v
     restart: always
     environment:
       MQTT_HOST: ${MQTT_HOST}

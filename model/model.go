@@ -4,6 +4,41 @@ import "os"
 
 type Post struct {
 	ID   int     `db:"id"`
+	M24  bool    `db:"m24"`
+	M25  bool    `db:"m25"`
+	M26  bool    `db:"m26"`
+	M27  bool    `db:"m27"`
+	M28  bool    `db:"m28"`
+	M29  bool    `db:"m29"`
+	M30  bool    `db:"m30"`
+	M31  bool    `db:"m31"`
+	M32  bool    `db:"m32"`
+	M33  bool    `db:"m33"`
+	M34  bool    `db:"m34"`
+	M35  bool    `db:"m35"`
+	M104 bool    `db:"m104"`
+	M105 bool    `db:"m105"`
+	M106 bool    `db:"m106"`
+	M107 bool    `db:"m107"`
+	M108 bool    `db:"m108"`
+	M109 bool    `db:"m109"`
+	M110 bool    `db:"m110"`
+	M111 bool    `db:"m111"`
+	L20  bool    `db:"l20"`
+	L21  bool    `db:"l21"`
+	L22  bool    `db:"l22"`
+	L23  bool    `db:"l23"`
+	L41  bool    `db:"l41"`
+	L42  bool    `db:"l42"`
+	L43  bool    `db:"l43"`
+	L44  bool    `db:"l44"`
+	L45  bool    `db:"l45"`
+	L46  bool    `db:"l46"`
+	L47  bool    `db:"l47"`
+	L90  bool    `db:"l90"`
+	L91  bool    `db:"l91"`
+	L92  bool    `db:"l92"`
+	L93  bool    `db:"l93"`
 	D0   int     `db:"d0"`
 	D1   int     `db:"d1"`
 	D2   int     `db:"d2"`
