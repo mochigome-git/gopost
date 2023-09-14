@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
-	"sync"
-	"time"
+	"os/signal"
+	"syscall"
 
 	"post/utils"
 
@@ -18,26 +19,22 @@ var db *gorm.DB
 // broker stores the MQTT broker's hostname.
 var broker string
 
-// port stores the MQTT broker's port number.
+// mqttport stores the MQTT broker's port number.
 var mqttport string
 
-// topic of the MQTT broker
+// topic stores the topic of the MQTT broker.
 var topic string
 
 func main() {
-	clientDone := make(chan struct{})
+	configureApp()
+
 	stopProcessing := make(chan struct{})
+	clientDone := make(chan struct{})
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		utils.Client(broker, mqttport, topic)
-	}()
+	go utils.Client(broker, mqttport, topic, clientDone)
 
 	go func() {
-		defer close(clientDone)
+		defer close(stopProcessing)
 
 		for {
 			select {
@@ -49,14 +46,19 @@ func main() {
 		}
 	}()
 
-	time.Sleep(2 * time.Second)
+	// Handle graceful shutdown
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
+	<-sigCh
 
+	// Signal to stop processing
 	close(stopProcessing)
 
-	wg.Wait()
+	// Wait for client to finish
+	<-clientDone
 }
 
-func init() {
+func configureApp() {
 	/*if err := godotenv.Load(); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}*/
@@ -73,12 +75,12 @@ func init() {
 	var err error
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("Failed to connect to the database: " + err.Error())
+		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		panic("Failed to get DB instance: " + err.Error())
+		log.Fatalf("Failed to get DB instance: %v", err)
 	}
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
