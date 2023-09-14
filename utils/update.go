@@ -13,6 +13,7 @@ import (
 
 var mu sync.RWMutex
 var stopProcessing = make(chan struct{})
+var lastProcessedTime time.Time
 
 func ProcessMQTTData(db *gorm.DB) {
 	for {
@@ -45,11 +46,7 @@ func ProcessMQTTData(db *gorm.DB) {
 		startTime := time.Now()
 		collectedData := make(map[string][]float64) // Map to store data for each fieldName as float64
 
-		for {
-			if time.Since(startTime).Seconds() >= 35 {
-				break
-			}
-
+		for time.Since(startTime).Seconds() < 35 {
 			for _, message := range messages {
 				fieldName := message.Address
 
@@ -71,7 +68,7 @@ func ProcessMQTTData(db *gorm.DB) {
 			time.Sleep(time.Second)
 		}
 
-		// Calculate the mean for each fieldName and call UpdateField
+		// Calculate the mean for each fieldName
 		for fieldName, values := range collectedData {
 			if len(values) == 0 {
 				continue
@@ -90,8 +87,15 @@ func ProcessMQTTData(db *gorm.DB) {
 			}
 		}
 
-		if err := UpdateMQTTDataToDB(&existingRecord, db); err != nil {
-			fmt.Printf("Error updating database: %v\n", err)
+		// Clear the collected data
+		collectedData = make(map[string][]float64)
+
+		// Update the database after 35 seconds
+		if time.Since(startTime).Seconds() >= 35 {
+			if err := UpdateMQTTDataToDB(&existingRecord, db); err != nil {
+				fmt.Printf("Error updating database: %v\n", err)
+			}
+			lastProcessedTime = time.Now()
 		}
 
 		select {
