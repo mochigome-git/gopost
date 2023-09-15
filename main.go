@@ -30,8 +30,9 @@ func main() {
 
 	stopProcessing := make(chan struct{})
 	clientDone := make(chan struct{})
+	receivedMessagesJSONChan := make(chan string) // Create a channel for received JSON data
 
-	go utils.Client(broker, mqttport, topic, clientDone)
+	go utils.Client(broker, mqttport, topic, receivedMessagesJSONChan, clientDone)
 
 	go func() {
 		defer close(stopProcessing)
@@ -41,7 +42,7 @@ func main() {
 			case <-stopProcessing:
 				return
 			default:
-				utils.ProcessMQTTData(db)
+				utils.ProcessMQTTData(db, receivedMessagesJSONChan, stopProcessing) // Pass the channels
 			}
 		}
 	}()
@@ -67,9 +68,9 @@ func configureApp() {
 	password := os.Getenv("DB_PASSWORD")
 	dbname := os.Getenv("DB_NAME")
 	port := os.Getenv("DB_PORT")
-	broker = os.Getenv("MQTT_HOST")
-	mqttport = os.Getenv("MQTT_PORT")
-	topic = os.Getenv("MQTT_TOPIC")
+	broker = os.Getenv("MQTT_SUB_HOST")
+	mqttport = os.Getenv("MQTT_SUB_PORT")
+	topic = os.Getenv("MQTT_SUB_TOPIC")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, password, dbname, port)
 	var err error
