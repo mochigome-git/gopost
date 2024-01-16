@@ -64,7 +64,7 @@ type Post struct {
 	D22  int     `db:"d22"`
 	D23  int     `db:"d23"`
 	D24  int     `db:"d24"`
-	D608 int     `db:"d608"`
+	D608 int     `db:"d608" sql:"type:int4"`
 	D609 int     `db:"d609"`
 	D610 int     `db:"d610"`
 	D611 int     `db:"d611"`

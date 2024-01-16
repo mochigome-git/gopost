@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"post/model"
 	"strconv"
 	"time"
@@ -61,11 +62,24 @@ func ProcessMQTTData(db *gorm.DB, receivedMessagesJSONChan <-chan string, stopPr
 				if len(values) == 0 {
 					continue
 				}
-
 				clearCacheAndData(collectedData)
 
-				mean := calculateMean(values)
-				if err := UpdateField(&existingRecord, fieldName, mean); err != nil {
+				// Retrieve the option from the environment variable
+				key := os.Getenv("KEY_OPTION")
+
+				var result float64
+				// Check the option and perform the corresponding operation
+				switch key {
+				case "mean":
+					result = calculateMean(values)
+				case "first":
+					result = getFirstElement(values)
+				default:
+					fmt.Println("Invalid option")
+					return
+				}
+
+				if err := UpdateField(&existingRecord, fieldName, result); err != nil {
 					fmt.Printf("Error updating field %s: %v\n", fieldName, err)
 					continue
 				}
@@ -105,6 +119,15 @@ func calculateMean(values []float64) float64 {
 		sum += value
 	}
 	return sum / float64(len(values))
+}
+
+// getFirstElement retrieves the first element of a slice of float64 values.
+func getFirstElement(values []float64) float64 {
+	if len(values) > 0 {
+		return values[0]
+	}
+	// Handle the case where the slice is empty.
+	return 0.0 // You can choose a default value or handle it differently based on your requirements.
 }
 
 // Define a function to clear the cache and data.
