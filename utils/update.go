@@ -33,14 +33,14 @@ func ProcessMQTTData(db *gorm.DB, receivedMessagesJSONChan <-chan string, stopPr
 				continue
 			}
 
-			var existingRecord model.Post
-			if err := FindRecordByID(1, &existingRecord, db); err != nil {
-				fmt.Printf("Error finding record by ID: %v\n", err)
-				continue
-			}
+			//var existingRecord model.Post
+			//if err := FindRecordByID(1, &existingRecord, db); err != nil {
+			//	fmt.Printf("Error finding record by ID: %v\n", err)
+			//	continue
+			//}
 
 			startTime := time.Now()
-
+			var newRecord model.Post // Create a new record
 			for {
 				for _, message := range messages {
 					fieldName := message.Address
@@ -79,13 +79,15 @@ func ProcessMQTTData(db *gorm.DB, receivedMessagesJSONChan <-chan string, stopPr
 					return
 				}
 
-				if err := UpdateField(&existingRecord, fieldName, result); err != nil {
+				//if err := InsertField(&existingRecord, fieldName, result); err != nil {
+				if err := InsertField(&newRecord, fieldName, result); err != nil {
 					fmt.Printf("Error updating field %s: %v\n", fieldName, err)
 					continue
 				}
 			}
 
-			if err := UpdateMQTTDataToDB(&existingRecord, db); err != nil {
+			//if err := UpdateMQTTDataToDB(&existingRecord, db); err != nil {
+			if err := UpdateMQTTDataToDB(&newRecord, db); err != nil {
 				fmt.Printf("Error updating database: %v\n", err)
 			}
 			return

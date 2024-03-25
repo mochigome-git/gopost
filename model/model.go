@@ -3,7 +3,6 @@ package model
 import "os"
 
 type Post struct {
-	ID   int     `db:"id"`
 	M24  bool    `db:"m24"`
 	M25  bool    `db:"m25"`
 	M26  bool    `db:"m26"`

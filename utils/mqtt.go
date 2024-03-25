@@ -1,11 +1,14 @@
 package utils
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 
@@ -26,7 +29,7 @@ var (
 
 var mqttData MqttData
 
-func getClientOptions(broker, port, topic string) *mqtt.ClientOptions {
+func getClientOptions(broker, port string) *mqtt.ClientOptions {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
 	clientID := "go_mqtt_subscriber_" + uuid.New().String()
@@ -38,8 +41,59 @@ func getClientOptions(broker, port, topic string) *mqtt.ClientOptions {
 	return opts
 }
 
-func Client(broker, port, topic string, receivedMessagesJSONChan chan<- string, clientDone chan<- struct{}) {
-	opts := getClientOptions(broker, port, topic)
+func getClientOptionsTLS(broker, port, caCertFile, clientCertFile, clientKeyFile string) (*mqtt.ClientOptions, error) {
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker(fmt.Sprintf("mqtts://%s:%s", broker, port))
+	clientID := "go_mqtt_subscriber_" + uuid.New().String()
+
+	// Load CA certificate
+	caCert, err := os.ReadFile(caCertFile)
+	if err != nil {
+		return nil, fmt.Errorf("error reading CA certificate file: %s", err)
+	}
+
+	// Load client certificate and key
+	cert, err := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
+	if err != nil {
+		return nil, fmt.Errorf("error loading client certificate/key: %s", err)
+	}
+
+	// Create a certificate pool and add CA certificate
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM(caCert) {
+		return nil, fmt.Errorf("failed to append CA certificate")
+	}
+
+	tlsConfig := &tls.Config{
+		RootCAs:      caCertPool,
+		Certificates: []tls.Certificate{cert},
+	}
+
+	opts.SetClientID(clientID)
+	opts.SetUsername("emqx")
+	opts.SetPassword("public")
+	opts.SetTLSConfig(tlsConfig)
+	opts.OnConnect = connectHandler
+	opts.OnConnectionLost = connectLostHandler
+	return opts, err
+}
+
+func Client(broker, port, topic, mqttsStr, caCertFile, clientCertFile, clientKeyFile string, receivedMessagesJSONChan chan<- string, clientDone chan<- struct{}) {
+	// Parse the string value into a boolean, defaulting to false if parsing fails
+	mqtts, _ := strconv.ParseBool(mqttsStr)
+	var opts *mqtt.ClientOptions
+
+	if mqtts {
+		var err error
+		opts, err = getClientOptionsTLS(broker, port, caCertFile, clientCertFile, clientKeyFile)
+		if err != nil {
+			log.Fatalf("Error requesting MQTT TLS configuration: %v", err.Error())
+			return
+		}
+	} else {
+		opts = getClientOptions(broker, port)
+	}
+
 	client := mqtt.NewClient(opts)
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
