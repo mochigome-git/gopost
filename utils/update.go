@@ -41,6 +41,9 @@ func ProcessMQTTData(db *gorm.DB, receivedMessagesJSONChan <-chan string, stopPr
 
 			startTime := time.Now()
 			var newRecord model.Post // Create a new record
+			// Track which fields have been hit at least once
+			hitFields := make(map[string]bool)
+
 			for {
 				for _, message := range messages {
 					fieldName := message.Address
@@ -51,9 +54,14 @@ func ProcessMQTTData(db *gorm.DB, receivedMessagesJSONChan <-chan string, stopPr
 					}
 					collectedData[fieldName] = append(collectedData[fieldName], fieldValue)
 				}
+
+				if len(hitFields) == len(messages) {
+					break
+				}
+
 				time.Sleep(time.Second)
 
-				if time.Since(startTime).Seconds() >= 35 {
+				if time.Since(startTime).Seconds() >= 55 {
 					break
 				}
 			}

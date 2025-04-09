@@ -104,11 +104,11 @@ func InsertField(post interface{}, address string, value interface{}) error {
 		field.SetBool(boolValue)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		// Convert the value to an integer
-		intValue, err := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+		intValue, err := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
 		if err != nil {
 			return err
 		}
-		field.SetInt(intValue)
+		field.SetInt(int64(intValue))
 	case reflect.Float32, reflect.Float64:
 		// Convert the value to a float
 		floatValue, err := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
