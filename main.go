@@ -9,8 +9,6 @@ import (
 
 	"post/utils"
 
-	//"github.com/joho/godotenv"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -73,9 +71,9 @@ func configureApp() {
 	mqttsStr = os.Getenv("MQTTS_ON")
 	mqttport = os.Getenv("MQTT_SUB_PORT")
 	topic = os.Getenv("MQTT_SUB_TOPIC")
-	caCertFile = os.Getenv("MQTT_CA_CERTIFICATE")
-	clientCertFile = os.Getenv("MQTT_CLIENT_CERTIFICATE")
-	clientKeyFile = os.Getenv("MQTT_PRIVATE_KEY")
+	caCertFile = os.Getenv("ECS_MQTT_CA_CERTIFICATE")
+	clientCertFile = os.Getenv("ECS_MQTT_CLIENT_CERTIFICATE")
+	clientKeyFile = os.Getenv("ECS_MQTT_PRIVATE_KEY")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, password, dbname, port)
 	var err error

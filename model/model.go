@@ -123,6 +123,19 @@ type Post struct {
 	D778 float32 `db:"d778"`
 	D676 float32 `db:"d676"`
 	D650 float32 `db:"d650"`
+	D180 float32 `db:"d180"`
+	D176 float32 `db:"d176"`
+	D638 float32 `db:"d638"`
+	D188 float32 `db:"d188"`
+	D754 float32 `db:"d754"`
+	D824 float32 `db:"d824"`
+	D826 float32 `db:"d826"`
+	D740 float32 `db:"d740"`
+	D742 float32 `db:"d742"`
+	D744 float32 `db:"d744"`
+	D746 float32 `db:"d746"`
+	D828 float32 `db:"d828"`
+	D830 float32 `db:"d830"`
 }
 
 type Message struct {

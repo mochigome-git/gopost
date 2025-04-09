@@ -21,3 +21,5 @@ CMD ["/app/post"]
 
 # Build Image with command
 # docker build -t post:${version} .
+# docker tag post:${version} mochigome/post:${version}
+# docker push mochigome/post:${version}

@@ -41,19 +41,19 @@ func getClientOptions(broker, port string) *mqtt.ClientOptions {
 	return opts
 }
 
-func getClientOptionsTLS(broker, port, caCertFile, clientCertFile, clientKeyFile string) (*mqtt.ClientOptions, error) {
+func getClientOptionsTLS(broker, port, caCertString, clientCertString, clientKeyString string) (*mqtt.ClientOptions, error) {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("mqtts://%s:%s", broker, port))
 	clientID := "go_mqtt_subscriber_" + uuid.New().String()
 
-	// Load CA certificate
-	caCert, err := os.ReadFile(caCertFile)
-	if err != nil {
-		return nil, fmt.Errorf("error reading CA certificate file: %s", err)
+	// Load CA certificate from string
+	caCert := []byte(caCertString)
+	if len(caCert) == 0 {
+		return nil, fmt.Errorf("CA certificate is empty or invalid")
 	}
 
-	// Load client certificate and key
-	cert, err := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
+	// Load client certificate and key from strings
+	cert, err := tls.X509KeyPair([]byte(clientCertString), []byte(clientKeyString))
 	if err != nil {
 		return nil, fmt.Errorf("error loading client certificate/key: %s", err)
 	}
@@ -64,6 +64,7 @@ func getClientOptionsTLS(broker, port, caCertFile, clientCertFile, clientKeyFile
 		return nil, fmt.Errorf("failed to append CA certificate")
 	}
 
+	// Configure TLS with the certificates
 	tlsConfig := &tls.Config{
 		RootCAs:      caCertPool,
 		Certificates: []tls.Certificate{cert},
@@ -75,7 +76,8 @@ func getClientOptionsTLS(broker, port, caCertFile, clientCertFile, clientKeyFile
 	opts.SetTLSConfig(tlsConfig)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
-	return opts, err
+
+	return opts, nil
 }
 
 func Client(broker, port, topic, mqttsStr, caCertFile, clientCertFile, clientKeyFile string, receivedMessagesJSONChan chan<- string, clientDone chan<- struct{}) {
