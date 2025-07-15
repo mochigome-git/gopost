@@ -1,10 +1,10 @@
-version: '3.8'
-
 services:
   subscriber:
-    container_name: nk2-msp-subscriber-postver
-    image: post:1.1v
+    container_name: nk3-post-test
+    image: mochigome/post:2.3v.ecs
     restart: always
+    env_file:
+      - .env
     environment:
       MQTT_SUB_HOST: ${MQTT_SUB_HOST}
       MQTT_SUB_PORT: ${MQTT_SUB_PORT}
@@ -15,3 +15,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
+      POST_INTERVAL: ${POST_INTERVAL}
+      KEY_OPTION: ${KEY_OPTION}
+      ECS_MQTT_PRIVATE_KEY: ${ECS_MQTT_PRIVATE_KEY}
+      ECS_MQTT_CLIENT_CERTIFICATE: ${ECS_MQTT_CLIENT_CERTIFICATE}
+      ECS_MQTT_CA_CERTIFICATE: ${ECS_MQTT_CA_CERTIFICATE}
