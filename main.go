@@ -9,19 +9,21 @@ import (
 
 	"post/utils"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var (
 	db             *gorm.DB
-	broker         string // broker stores the MQTT broker's hostname.
-	mqttport       string // mqttport stores the MQTT broker's port number.
-	topic          string // topic stores the topic of the MQTT broker.
-	mqttsStr       string // mqtts true or false
-	caCertFile     string // CA Certificate location path
-	clientCertFile string // Client Certificate location path
-	clientKeyFile  string // Client Key location path
+	broker         string  // broker stores the MQTT broker's hostname.
+	mqttport       string  // mqttport stores the MQTT broker's port number.
+	topic          string  // topic stores the topic of the MQTT broker.
+	mqttsStr       string  // mqtts true or false
+	caCertFile     string  // CA Certificate location path
+	clientCertFile string  // Client Certificate location path
+	clientKeyFile  string  // Client Key location path
+	postInterval   float64 // Interval time wait to post
 )
 
 func main() {
@@ -41,7 +43,7 @@ func main() {
 			case <-stopProcessing:
 				return
 			default:
-				utils.ProcessMQTTData(db, receivedMessagesJSONChan, stopProcessing) // Pass the channels
+				utils.ProcessMQTTData(db, receivedMessagesJSONChan, stopProcessing, postInterval) // Pass the channels
 			}
 		}
 	}()
@@ -59,9 +61,11 @@ func main() {
 }
 
 func configureApp() {
-	//if err := godotenv.Load(); err != nil {
-	//	log.Fatalf("Error loading .env file: %v", err)
-	//}
+	// Optional fallback: try to load .env.local
+	if err := godotenv.Load(".env.local"); err != nil {
+		fmt.Println("Info: .env.local not found, using system environment variables")
+	}
+
 	host := os.Getenv("DB_HOST")
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
@@ -71,6 +75,8 @@ func configureApp() {
 	mqttsStr = os.Getenv("MQTTS_ON")
 	mqttport = os.Getenv("MQTT_SUB_PORT")
 	topic = os.Getenv("MQTT_SUB_TOPIC")
+	postInterval = utils.GetEnvFloat("POST_INTERVAL", 55)
+
 	caCertFile = os.Getenv("ECS_MQTT_CA_CERTIFICATE")
 	clientCertFile = os.Getenv("ECS_MQTT_CLIENT_CERTIFICATE")
 	clientKeyFile = os.Getenv("ECS_MQTT_PRIVATE_KEY")

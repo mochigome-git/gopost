@@ -15,9 +15,9 @@ import (
 type CollectedData map[string][]float64
 
 // ProcessMQTTData processes MQTT data and updates the database.
-func ProcessMQTTData(db *gorm.DB, receivedMessagesJSONChan <-chan string, stopProcessing <-chan struct{}) {
-	var collectedData CollectedData
-	collectedData = make(CollectedData)
+func ProcessMQTTData(db *gorm.DB, receivedMessagesJSONChan <-chan string, stopProcessing <-chan struct{}, intervalSec float64) {
+
+	collectedData := make(CollectedData)
 
 	for {
 		select {
@@ -61,7 +61,7 @@ func ProcessMQTTData(db *gorm.DB, receivedMessagesJSONChan <-chan string, stopPr
 
 				time.Sleep(time.Second)
 
-				if time.Since(startTime).Seconds() >= 55 {
+				if time.Since(startTime).Seconds() >= intervalSec {
 					break
 				}
 			}
